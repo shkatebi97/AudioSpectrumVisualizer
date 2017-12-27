@@ -1,0 +1,21 @@
+NET "ADC_R_empty" LOC = P132;
+NET "PC_TxD_busy_LED" LOC = P131;
+NET "ADC_RxD_idle" LOC = P127;
+NET "VGA_B[1]" LOC = P84;
+NET "VGA_B[0]" LOC = P83;
+NET "VGA_G[0]" LOC = P81;
+NET "VGA_G[1]" LOC = P82;
+NET "VGA_R[0]" LOC = P79;
+NET "VGA_R[1]" LOC = P80;
+NET "VGA_HSync" LOC = P87;
+NET "VGA_VSync" LOC = P85;
+NET "cclk" LOC = P50;
+NET "reset" LOC = P133;
+NET "PC_out" LOC = P104;
+NET "ADC_in" LOC = P105;
+//******************************
+//NET "Y_L_Shift" LOC = P51;
+//NET "Y_R_Shift" LOC = P48;
+//NET "X_R_Shift" LOC = P66;
+//NET "X_L_Shift" LOC = P59;
+
