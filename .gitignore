@@ -3,4 +3,4 @@
 !*.v
 !*.ucf
 !*.xise
-!ipcore_dir/
+!ipcore_dir/*
