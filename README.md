@@ -1,5 +1,3 @@
 This is the begining of My FPGA Projects :)
-Untill now my Project just show a circule on the screen and send back everythings you send.
-But there is a problem! it send back your data after sending three other data!
-So it is always behind three data...
-what is the solution?
+Untill now my Project just show a circule on the screen and send back everythings you send with RS232 (UART) using ASync FIFO.
+To use it you can connect ADC_in (This is Receiver) to any input pin you want and connect PC_out (This is Transmitter) to any pin output you want and this moudule will Forward every things from input to output but you MUST specify the baud rate of both input and output in modules.

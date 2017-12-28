@@ -27,6 +27,7 @@ module main_module(
 	 input Y_L_Shift,
 	 input reset,					//Active High
     output PC_out,
+	 output ADC_R_empty,
 	 output PC_TxD_busy_LED,
 	 output ADC_RxD_idle,
 	 //output ADC_out,
@@ -40,11 +41,11 @@ module main_module(
 	 //***************************************** REGs *****************************************
 	 
 	 reg ADC_in_registered = 1;
-	 //reg ADC_RxD_data_ready_registered;
-	 //reg ADC_RxD_data_ready_registered1;
 	 reg [9:0]X_SH = 0;
 	 reg [9:0]Y_SH = 0;
 	 reg [15:0]TxD_busy_LED = 0;
+	 reg data_ready_registered;
+	 reg [7:0]RX_data_registered = 0;
 	 
 	 //***************************************** Outs *****************************************
 	 
@@ -59,15 +60,15 @@ module main_module(
 	 wire RxD_FIFO_WR_EN;
 	 wire RxD_FIFO_RD_EN;
 	 wire [7:0] ADC_R_FIFO_dout;
+	 wire newDataReady;
 	 
 	 //***************************************** ASSIGNs **************************************
 	 
 	 assign ADC_TxD_data = 0;
-	 //always@(posedge cclk)ADC_RxD_data_ready_registered = ADC_RxD_data_ready;
-	 //always@(posedge cclk)ADC_RxD_data_ready_registered1 = ADC_RxD_data_ready_registered;
-	 //assign RxD_FIFO_WR_EN = ADC_RxD_data_ready_registered | ADC_RxD_data_ready;
-	 //assign RxD_FIFO_RD_EN = ADC_RxD_data_ready_registered1 | ADC_RxD_data_ready_registered;
 	 assign PC_TxD_busy_LED = (TxD_busy_LED != 0)?(1'b1):(1'b0);
+	 assign newDataReady = data_ready_registered | ADC_RxD_data_ready;
+	 always@(negedge ADC_OversamplingTick)data_ready_registered <= ADC_RxD_data_ready;
+	 always@(negedge ADC_OversamplingTick)RX_data_registered <= ADC_RxD_data;
 	 
 	 //***************************************** ADC ******************************************
 	 
@@ -90,7 +91,7 @@ module main_module(
 		 )
 		 ADC_Receiver(
 		 .clk(cclk), 
-		 /*.RxD(ADC_in),*/.RxD(ADC_in_registered), 
+		 .RxD(ADC_in_registered), 
 		 .RxD_data_ready(ADC_RxD_data_ready), 
 		 .RxD_data(ADC_RxD_data), 
 		 .RxD_idle(ADC_RxD_idle), 
@@ -107,7 +108,6 @@ module main_module(
 	 
 	 //***************************************** ASSIGNs **************************************
 	 
-	 //assign PC_T_Start = !PC_T_empty;								//this will stop transmitter while PC_TransmitterFIFO is empty
 	 assign PC_T_start = !ADC_R_empty | ADC_RxD_data_ready;
 	 
 	 //***************************************** PC *******************************************
@@ -118,8 +118,8 @@ module main_module(
 		 )
 		 PC_Transmitter(
 		 .clk(cclk), 
-		 /*.TxD_start(ADC_RxD_data_ready),*/.TxD_start(PC_T_start),//.TxD_start(PC_T_Start), 
-		 /*.TxD_data(ADC_RxD_data),*/.TxD_data(ADC_R_FIFO_dout), 
+		 .TxD_start(ADC_R_valid),
+		 .TxD_data(ADC_R_FIFO_dout), 
 		 .TxD(PC_out), 
 		 .TxD_busy(PC_TxD_busy),
 		 .BitTick(PC_BitTick)
@@ -182,10 +182,10 @@ module main_module(
 	
 	AsyncFifo ADC_ReceiverFIFO(
 	  .rst(1'b0),
-	  .wr_clk(ADC_RxD_data_ready), // input wr_clk
+	  .wr_clk(ADC_OversamplingTick), // input wr_clk
 	  .rd_clk(cclk), // input rd_clk
-	  .din(ADC_RxD_data), // input [7 : 0] din
-	  .wr_en(1'b1), // input wr_en
+	  .din(RX_data_registered), // input [7 : 0] din
+	  .wr_en(data_ready_registered), // input wr_en
 	  .rd_en(1'b1), // input rd_en
 	  .dout(ADC_R_FIFO_dout), // output [7 : 0] dout
 	  .full(ADC_R_full), // output full
@@ -214,13 +214,13 @@ module main_module(
 	
 	always@(posedge cclk)begin
 		if(!flag)begin
-			if(X_L_Shift)begin X_SH = X_SH + 1;flag = ~flag;end
-			if(X_R_Shift)begin X_SH = X_SH - 1;flag = ~flag;end
-			if(Y_R_Shift)begin Y_SH = Y_SH - 1;flag = ~flag;end
-			if(Y_L_Shift)begin Y_SH = Y_SH + 1;flag = ~flag;end
+			if(X_L_Shift)begin X_SH = X_SH + 1;flag = 1;end
+			if(X_R_Shift)begin X_SH = X_SH - 1;flag = 1;end
+			if(Y_R_Shift)begin Y_SH = Y_SH - 1;flag = 1;end
+			if(Y_L_Shift)begin Y_SH = Y_SH + 1;flag = 1;end
 		end
 		else begin
-			if(!(X_L_Shift||X_R_Shift||Y_L_Shift||Y_R_Shift))flag = ~flag;
+			if(!(X_L_Shift||X_R_Shift||Y_L_Shift||Y_R_Shift))flag = 0;
 		end
 	end
 	
@@ -231,7 +231,7 @@ module main_module(
 	end
 	
 	always@(posedge cclk)begin
-		if(PC_TxD_busy || TxD_busy_LED != 0)
+		if(newDataReady || TxD_busy_LED != 0)
 			TxD_busy_LED = TxD_busy_LED + 1;
 		else
 			TxD_busy_LED = 0;
