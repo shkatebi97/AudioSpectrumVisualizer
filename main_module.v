@@ -21,11 +21,8 @@
 module main_module(
     input ADC_in,
 	 input cclk,
-	 input X_R_Shift,
-	 input X_L_Shift,
-	 input Y_R_Shift,
-	 input Y_L_Shift,
 	 input reset,					//Active High
+	 output [7:0] RamOut,
     output PC_out,
 	 output ADC_R_empty,
 	 output PC_TxD_busy_LED,
@@ -190,17 +187,21 @@ module main_module(
 	  .dout(ADC_R_FIFO_dout), // output [7 : 0] dout
 	  .full(ADC_R_full), // output full
 	  .empty(ADC_R_empty), // output empty
-	  .valid(ADC_R_valid) // output valid
+	  .valid(ADC_R_valid), // output valid
+	  .rd_data_count(rd_data_count) // output [10 : 0] rd_data_count
 	);
 	
 	//****************************************************************************************
 	//********************************** VGA Controlers **************************************
 	
+	wire [9:0]PixAddress;
+	wire [7:0]RamOut;	
+	
 	VGA_controller VGA_Interface (
     .External_Data_Control(External_Data_Control), 
-	 .X_SH(X_SH),
-	 .Y_SH(Y_SH),
-    .vclk(cclk), 
+	 .Data(RamOut),
+    .vclk(cclk),
+	 .Address(PixAddress),
     .R(VGA_R), 
     .G(VGA_G), 
     .B(VGA_B), 
@@ -210,9 +211,78 @@ module main_module(
 	
 	//****************************************************************************************
 	
+	reg wea = 0;
+	reg [8:0]addra;
+	reg [7:0] dina;
+	wire [7:0] xk_re;
+	wire [7:0] xk_im;
+	wire [8:0] xk_index;
+	wire dv;
+	
+	wire [7:0] data;
+	
+	assign data = (((xk_re*xk_re + xk_im*xk_im)*255)/130050);
+	
+	DRAM FFTCache (
+	  .clka(cclk), // input clka
+	  /*.wea(1'b0),*/.wea(dv), // input [0 : 0] wea
+	  .addra(xk_index), // input [8 : 0] addra
+	  .dina(data), // input [7 : 0] dina
+	  .clkb(cclk), // input clkb
+	  .addrb(PixAddress), // input [8 : 0] addrb
+	  .doutb(RamOut) // output [7 : 0] doutb
+	);
+	
+	//****************************************************************************************
+	
+	wire start;
+	reg [8 : 0]CCLkCounter = 0;
+	reg ce;
+	
+	assign start = 1;//(rd_data_count > 512);
+	
+	Input_DRAM FFT_Input(
+	  .clka(cclk), // input clka
+	  .addra(xn_index), // input [8 : 0] addra
+	  .douta(InDouta) // output [7 : 0] douta
+	);
+	
+	always@(*)begin
+		if(/*(rd_data_count > 512) && */rfd)
+			ce = 1;
+		if(done)
+			ce = 0;
+	end
+	
+	reg fwd_inv_we , scale_sch_we;
+	
+	FFT FFT_Module (
+	  .clk(cclk), // input clk
+	  .ce(ce), // input ce
+	  .start(start), // input start
+	  .unload(unload), // input unload
+	  .xn_re(InDouta),//.xn_re(ADC_R_FIFO_dout), // input [7 : 0] xn_re
+	  .xn_im(1'b0), // input [7 : 0] xn_im
+	  .fwd_inv(1'b0), // input fwd_inv
+	  .fwd_inv_we(fwd_inv_we), // input fwd_inv_we
+	  .scale_sch(1'b1), // input [9 : 0] scale_sch
+	  .scale_sch_we(scale_sch_we), // input scale_sch_we
+	  .rfd(rfd), // output rfd
+	  .xn_index(xn_index), // output [8 : 0] xn_index
+	  .busy(busy), // output busy
+	  .edone(edone), // output edone
+	  .done(done), // output done
+	  .dv(dv), // output dv
+	  .xk_index(xk_index), // output [8 : 0] xk_index
+	  .xk_re(xk_re), // output [7 : 0] xk_re
+	  .xk_im(xk_im) // output [7 : 0] xk_im
+	);
+	
+	//****************************************************************************************
+	
 	reg flag = 0;
 	
-	always@(posedge cclk)begin
+	/*always@(posedge cclk)begin
 		if(!flag)begin
 			if(X_L_Shift)begin X_SH = X_SH + 1;flag = 1;end
 			if(X_R_Shift)begin X_SH = X_SH - 1;flag = 1;end
@@ -222,6 +292,30 @@ module main_module(
 		else begin
 			if(!(X_L_Shift||X_R_Shift||Y_L_Shift||Y_R_Shift))flag = 0;
 		end
+	end*/
+	
+	initial begin
+		fwd_inv_we = 0;
+		scale_sch_we = 0;
+		@(negedge cclk)
+		fwd_inv_we = 1;
+		scale_sch_we = 1;
+	end
+	
+	always@(negedge cclk)begin
+		if(fwd_inv_we && scale_sch_we)begin
+			fwd_inv_we = 0;
+			scale_sch_we = 0;
+		end
+	end
+	
+	reg state = 0;
+	always@(posedge cclk)begin
+		wea = 1;
+		addra = addra + 1;
+		if(state)
+			dina = dina + 1;
+		state = ~state;
 	end
 	
 	//this is for registring input
