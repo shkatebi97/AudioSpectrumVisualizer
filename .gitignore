@@ -3,5 +3,6 @@
 !*.v
 !*.ucf
 !*.xise
-!ipcore_dir/
+!*.xco
+!ipcore_dirs
 !README.md
