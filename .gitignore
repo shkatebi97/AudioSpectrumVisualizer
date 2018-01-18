@@ -4,5 +4,5 @@
 !*.ucf
 !*.xise
 !*.xco
-!ipcore_dirs
+!ipcore_dirs/
 !README.md
