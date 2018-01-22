@@ -38,7 +38,7 @@ module Pixel_Generator(
 	 always@(*)begin
 		if(Video_On)begin
 			if(X_PIX < 512)begin
-				if((480 - data) - Y_PIX <  2)begin
+				if((470 - data)< Y_PIX)begin
 					{R , G , B} = green;
 				end
 				else begin 
@@ -56,7 +56,7 @@ module Pixel_Generator(
 	 
 	 //assign {R , G , B} = (Video_On)?((X_PIX < 513)?(((480 - data) < Y_PIX)?(6'b001100):(6'b000011)):(6'b110000)):(6'b000000);
 	 
-	 always@(*)begin
+	 always@(posedge clk)begin
 		if(Video_On)begin
 			if(X_PIX < 512)begin
 				address = X_PIX;

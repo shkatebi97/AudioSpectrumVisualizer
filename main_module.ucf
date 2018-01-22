@@ -11,19 +11,24 @@ NET "VGA_HSync" LOC = P87;
 NET "VGA_VSync" LOC = P85;
 NET "cclk" LOC = P50;
 NET "reset" LOC = P133;
-NET "PC_out" LOC = P104;
-NET "ADC_in" LOC = P105;
+//NET "PC_out" LOC = P104;
+//NET "ADC_in" LOC = P105;
 //******************************
 //NET "Y_L_Shift" LOC = P51;
 //NET "Y_R_Shift" LOC = P48;
 //NET "X_R_Shift" LOC = P66;
 //NET "X_L_Shift" LOC = P59;
 //******************************
-NET "RamOut[0]" LOC = P132;
-NET "RamOut[1]" LOC = P131;
-NET "RamOut[2]" LOC = P127;
-NET "RamOut[3]" LOC = P126;
-NET "RamOut[4]" LOC = P124;
-NET "RamOut[5]" LOC = P123;
-NET "RamOut[6]" LOC = P121;
-NET "RamOut[7]" LOC = P120;
+NET "dataOut[0]" LOC = P132;
+NET "dataOut[1]" LOC = P131;
+NET "dataOut[2]" LOC = P127;
+//NET "dataOut[3]" LOC = P126;
+//NET "dataOut[4]" LOC = P124;
+//NET "dataOut[5]" LOC = P123;
+//NET "dataOut[6]" LOC = P121;
+//NET "dataOut[7]" LOC = P120;
+//******************************
+//NET "moreThan100" LOC = P132;
+//NET "ADC_R_full" LOC = P131;
+//NET "dv" LOC = P127;
+NET "ADC_in" LOC = P119;
