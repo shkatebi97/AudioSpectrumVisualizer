@@ -20,21 +20,56 @@
 //////////////////////////////////////////////////////////////////////////////////
 module Pixel_Generator(
     input EDOC,
-	 input [9:0] X_SH,
-	 input [9:0] Y_SH,
-    input [9:0] X_PIX,
-    input [9:0] Y_PIX,
+	 input [7:0] data,
+	 input [0:9] X_PIX,
+	 input [0:9] Y_PIX,
     input Video_On,
     input clk,
-    output [1:0] R,
-    output [1:0] G,
-    output [1:0] B
+	 output reg [8:0] address,
+    output reg [1:0] R,
+    output reg [1:0] G,
+    output reg [1:0] B
     );
-	 //integer i = 0 , j = 0;
 	 
-	 //reg [479:0][639:0] Video[5:0]; //640x480 -> RGB
+	 parameter black = 6'b000000 , red = 6'b110000 , green = 6'b001100 , blue = 6'b000011;
 	 
-	 //assign {R , G , B} = (Video_On)?((((X_PIX - 320 + X_SH)*(X_PIX - 320 + X_SH))+((Y_PIX - 240 + Y_SH)*(Y_PIX - 240 + Y_SH)) > 10000)?(6'b000011):(6'b001100)):(6'b000000);
-	 assign {R , G , B} = (Video_On)?((((X_PIX - 320)*(X_PIX - 320))+((Y_PIX - 240)*(Y_PIX - 240)) > 10000)?(6'b010101):(6'b110000)):(6'b000000);
+	 //assign {R , G , B} = (Video_On)?((((X_PIX - 320)*(X_PIX - 320))+((Y_PIX - 240)*(Y_PIX - 240)) > 10000)?(6'b010101):(6'b110000)):(6'b000000);
+	 
+	 always@(*)begin
+		if(Video_On)begin
+			if(X_PIX < 512)begin
+				if((470 - data)< Y_PIX)begin
+					{R , G , B} = green;
+				end
+				else begin 
+					{R , G , B} = blue;
+				end
+			end
+			else begin
+				{R , G , B} = red;
+			end
+		end
+		else begin
+			{R , G , B} = black;
+		end
+	 end
+	 
+	 //assign {R , G , B} = (Video_On)?((X_PIX < 513)?(((480 - data) < Y_PIX)?(6'b001100):(6'b000011)):(6'b110000)):(6'b000000);
+	 
+	 always@(posedge clk)begin
+		if(Video_On)begin
+			if(X_PIX < 512)begin
+				address = X_PIX;
+			end
+			else begin
+				address = 0;
+			end
+		end
+		else begin
+			address = 0;
+		end
+	 end
+	 
+	 //assign address = (Video_On)?((X_PIX < 512)?(X_PIX):(0)):(0);
 	 
 endmodule

@@ -20,9 +20,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 module VGA_controller(
     input External_Data_Control,
-	 input [9:0] X_SH,
-	 input [9:0] Y_SH,
+	 input [7:0] Data,
     input vclk,
+	 output [8:0] Address,
     output [1:0] R,
     output [1:0] G,
     output [1:0] B,
@@ -30,8 +30,8 @@ module VGA_controller(
     output VSync
     );
 	 
-	 wire [9:0] X_PIX;
-	 wire [9:0] Y_PIX;
+	 wire [9:0]X_PIX;
+	 wire [9:0]Y_PIX;
 	 
 	 VGA_SYNC VGA_Sync (
 		 .sclk(vclk), 
@@ -44,12 +44,12 @@ module VGA_controller(
 		 );
 	 Pixel_Generator Pix_Gen (
 		 .EDOC(External_Data_Control),
-		 .X_SH(X_SH),		 
-		 .Y_SH(Y_SH),		 
-		 .X_PIX(X_PIX), 
-		 .Y_PIX(Y_PIX), 
+		 .data(Data),
+		 .X_PIX(X_PIX),
+		 .Y_PIX(Y_PIX),
 		 .Video_On(Video_On), 
 		 .clk(vclk), 
+		 .address(Address),
 		 .R(R), 
 		 .G(G), 
 		 .B(B)
